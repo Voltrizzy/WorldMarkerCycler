@@ -1,0 +1,12 @@
+## Interface: 120000
+## Title: WorldMarkerCycler
+## Notes: Cycles through configurable world markers with a keybind. Use /wmc to open options.
+## Author: Voltrizzy
+## Version: 1.0.0
+## SavedVariables: WorldMarkerCyclerDB
+## X-Wago-ID: 5NR8wzK3
+## X-Curse-Project-ID: 1482301
+
+Bindings.xml
+Core.lua
+Options.lua
