@@ -157,9 +157,14 @@ local function CreateOptionsPanel()
     end
 
     -- Modern Settings API (The War Within / Dragonflight 10.x+)
-    if Settings and Settings.RegisterAddOnCategory then
-        local category = Settings.RegisterAddOnCategory(panel)
-        panel.settingsCategory = category
+    if Settings and Settings.RegisterCanvasLayoutCategory then
+        local category = Settings.RegisterCanvasLayoutCategory(panel, PANEL_TITLE)
+        -- In some WoW versions RegisterCanvasLayoutCategory returns the raw frame
+        -- instead of a CategoryMixin; guard against that before calling RegisterAddOnCategory.
+        if category and type(category.GetLayout) == "function" then
+            Settings.RegisterAddOnCategory(category)
+            panel.settingsCategory = category
+        end
     elseif InterfaceOptions_AddCategory then
         -- Legacy fallback
         InterfaceOptions_AddCategory(panel)
@@ -172,8 +177,8 @@ function WorldMarkerCycler_OpenOptions()
     RefreshAllDropdowns()
 
     if optionsPanel and optionsPanel.settingsCategory then
-        -- Modern API: open directly to our category.
-        Settings.OpenToCategory(optionsPanel.settingsCategory)
+        -- Modern API: 12.0+ requires a numeric ID, not the category object.
+        Settings.OpenToCategory(optionsPanel.settingsCategory:GetID())
     elseif InterfaceOptionsFrame_OpenToCategory then
         -- Legacy API
         InterfaceOptionsFrame_OpenToCategory(optionsPanel)
