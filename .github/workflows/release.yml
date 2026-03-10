@@ -1,0 +1,27 @@
+name: Packager
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers when you push a tag like v1.0.0
+      - 'release-*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      # These link to the secrets you created in Step 2
+      WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+      CF_API_KEY: ${{ secrets.CF_API_KEY }}
+
+    steps:
+      - name: Clone project
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required for changelog generation
+
+      - name: Package and Upload
+        uses: BigWigsMods/packager@v2
+        with:
+          # The IDs in your .toc file take priority, but these act as backups
+          args: -w 5NR8wzK3 -p 1482301
