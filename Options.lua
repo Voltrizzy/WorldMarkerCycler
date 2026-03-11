@@ -15,6 +15,9 @@ local dropdowns = {}
 -- Helpers
 -- ─────────────────────────────────────────────────────────────────────────────
 
+-- Forward declaration for the secure update function defined later
+local WorldMarkerCycler_UpdateSecureButtons_Ref
+
 -- Returns a set of markerIDs that are currently selected in OTHER rows.
 local function GetUsedMarkers(excludeStep)
     local used = {}
@@ -37,55 +40,56 @@ local function RefreshAllDropdowns()
         if dd then
             local markerID = WorldMarkerCyclerDB and WorldMarkerCyclerDB.sequence[step] or 0
             local info     = WorldMarkerCycler_MarkerInfo[markerID]
-            UIDropDownMenu_SetText(dd, info and info.name or "None")
+            -- Update the button text to match selection
+            dd:SetText(info and info.name or "None")
+            -- Regenerate the menu if open to update available options (filter used markers)
+            dd:GenerateMenu()
         end
+    end
+    
+    -- Sync with secure bindings
+    if WorldMarkerCycler_UpdateSecureButtons_Ref then
+        WorldMarkerCycler_UpdateSecureButtons_Ref()
     end
 end
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- Dropdown initialisation function (called by the legacy UIDropDownMenu system)
+-- Dropdown Menu Generator (Modern API)
 -- ─────────────────────────────────────────────────────────────────────────────
 
-local function Dropdown_Initialize(self, level)
-    if not level then return end
+local function CreateMenuGenerator(step)
+    return function(owner, rootDescription)
+        local used  = GetUsedMarkers(step)
+        local curID = WorldMarkerCyclerDB and WorldMarkerCyclerDB.sequence[step] or 0
 
-    local step = self.wmcStep
-    local used = GetUsedMarkers(step)
-
-    -- "None" entry — always available.
-    local noneEntry        = UIDropDownMenu_CreateInfo()
-    noneEntry.text         = "None"
-    noneEntry.value        = 0
-    noneEntry.func         = function(btn)
-        WorldMarkerCyclerDB.sequence[step] = 0
-        UIDropDownMenu_SetText(self, "None")
-        -- Re-open other dropdowns so the freed marker reappears.
-        RefreshAllDropdowns()
-    end
-    local curID = WorldMarkerCyclerDB and WorldMarkerCyclerDB.sequence[step] or 0
-    noneEntry.checked = (curID == 0)
-    UIDropDownMenu_AddButton(noneEntry, level)
-
-    -- One entry per world marker.
-    for id = 1, NUM_STEPS do
-        local minfo = WorldMarkerCycler_MarkerInfo[id]
-        if not used[id] or curID == id then          -- show if not used elsewhere (or currently selected here)
-            local entry         = UIDropDownMenu_CreateInfo()
-            entry.text          = minfo.name
-            entry.value         = id
-            entry.icon          = minfo.texture
-            entry.iconXOffset   = -4
-            entry.iconYOffset   = 0
-            entry.iconWidth     = 16
-            entry.iconHeight    = 16
-            local capturedID    = id   -- closure capture
-            entry.func          = function(btn)
-                WorldMarkerCyclerDB.sequence[step] = capturedID
-                UIDropDownMenu_SetText(self, minfo.name)
+        -- "None" entry
+        rootDescription:CreateRadio(
+            "None",
+            function() return curID == 0 end,
+            function()
+                WorldMarkerCyclerDB.sequence[step] = 0
                 RefreshAllDropdowns()
             end
-            entry.checked = (curID == id)
-            UIDropDownMenu_AddButton(entry, level)
+        )
+
+        -- Marker entries (1-8)
+        for id = 1, NUM_STEPS do
+            local minfo = WorldMarkerCycler_MarkerInfo[id]
+            -- Show marker if it's not used elsewhere, or if it is the current selection for this step
+            if not used[id] or curID == id then
+                local radio = rootDescription:CreateRadio(
+                    minfo.name,
+                    function() return curID == id end,
+                    function()
+                        WorldMarkerCyclerDB.sequence[step] = id
+                        RefreshAllDropdowns()
+                    end
+                )
+                
+                if minfo.texture and radio.SetIcon then
+                    radio:SetIcon(minfo.texture)
+                end
+            end
         end
     end
 end
@@ -122,11 +126,10 @@ local function BuildPanel(parent)
         label:SetText("Step " .. step .. ":")
 
         -- Dropdown
-        local dd = CreateFrame("Frame", ADDON_NAME .. "_DD_" .. step, parent, "UIDropDownMenuTemplate")
+        local dd = CreateFrame("DropdownButton", ADDON_NAME .. "_DD_" .. step, parent, "WowStyle1DropdownTemplate")
         dd:SetPoint("LEFT", label, "RIGHT", 8, -2)
-        dd.wmcStep = step
-        UIDropDownMenu_SetWidth(dd, DD_WIDTH)
-        UIDropDownMenu_Initialize(dd, Dropdown_Initialize)
+        dd:SetWidth(DD_WIDTH)
+        dd:SetupMenu(CreateMenuGenerator(step))
 
         dropdowns[step] = dd
     end
@@ -151,10 +154,10 @@ local function CreateOptionsPanel()
     BuildPanel(panel)
     optionsPanel = panel
 
-    -- Populate dropdowns once the DB is ready.
-    if WorldMarkerCyclerDB then
+    -- Refresh dropdowns whenever the panel is shown to ensure data is current.
+    panel:SetScript("OnShow", function()
         RefreshAllDropdowns()
-    end
+    end)
 
     -- Modern Settings API (The War Within / Dragonflight 10.x+)
     if Settings and Settings.RegisterCanvasLayoutCategory then
@@ -254,6 +257,9 @@ function btnNext:UpdateDBIndex(newIdx)
     end
 end
 
+-- Connect the forward declaration to the actual function
+WorldMarkerCycler_UpdateSecureButtons_Ref = WorldMarkerCycler_UpdateSecureButtons
+
 -- 2. Create the Secure Button for "Clear All"
 local btnClear = CreateFrame("Button", "WorldMarkerCycler_Clear", UIParent, "SecureActionButtonTemplate")
 btnClear:SetAttribute("type", "macro")
@@ -277,20 +283,13 @@ function WorldMarkerCycler_UpdateSecureButtons()
     btnNext:SetAttribute("currentIndex", WorldMarkerCyclerDB.currentIndex or 1)
 end
 
--- Hook into the dropdown refresh to ensure changes apply immediately
-local orig_Refresh = RefreshAllDropdowns
-RefreshAllDropdowns = function()
-    if orig_Refresh then orig_Refresh() end
-    WorldMarkerCycler_UpdateSecureButtons()
-end
-
 -- Make sure the panel exists after the addon loads (so ESC > Options lists it).
 local initFrame = CreateFrame("Frame")
-initFrame:RegisterEvent("PLAYER_LOGIN")
-initFrame:SetScript("OnEvent", function(self)
-    CreateOptionsPanel()
-    if WorldMarkerCyclerDB then
-        RefreshAllDropdowns()
+initFrame:RegisterEvent("ADDON_LOADED")
+initFrame:SetScript("OnEvent", function(self, event, addonName)
+    if addonName == ADDON_NAME then
+        CreateOptionsPanel()
+        -- The panel is now registered. Its OnShow script will handle populating the data.
+        self:UnregisterEvent("ADDON_LOADED")
     end
-    self:UnregisterEvent("PLAYER_LOGIN")
 end)
