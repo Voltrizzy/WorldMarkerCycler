@@ -133,6 +133,22 @@ local function BuildPanel(parent)
 
         dropdowns[step] = dd
     end
+
+    -- "Key Bindings" Shortcut Button
+    -- Provides a convenient way to jump to the keybinding interface to set keys.
+    local kbBtn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    kbBtn:SetPoint("TOPLEFT", 24, START_Y - (NUM_STEPS * ROW_HEIGHT) - 24)
+    kbBtn:SetSize(160, 24)
+    kbBtn:SetText("Key Bindings")
+    kbBtn:SetScript("OnClick", function()
+        if SettingsPanel and SettingsPanel:IsShown() then SettingsPanel:Close() end
+        if KeyBindingFrame_LoadUI then KeyBindingFrame_LoadUI() end
+        if KeyBindingFrame then ShowUIPanel(KeyBindingFrame) end
+    end)
+
+    local kbLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    kbLabel:SetPoint("LEFT", kbBtn, "RIGHT", 10, 0)
+    kbLabel:SetText("Assign keys for 'Next Marker' and 'Clear'.")
 end
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -162,12 +178,8 @@ local function CreateOptionsPanel()
     -- Modern Settings API (The War Within / Dragonflight 10.x+)
     if Settings and Settings.RegisterCanvasLayoutCategory then
         local category = Settings.RegisterCanvasLayoutCategory(panel, PANEL_TITLE)
-        -- In some WoW versions RegisterCanvasLayoutCategory returns the raw frame
-        -- instead of a CategoryMixin; guard against that before calling RegisterAddOnCategory.
-        if category and type(category.GetLayout) == "function" then
-            Settings.RegisterAddOnCategory(category)
-            panel.settingsCategory = category
-        end
+        Settings.RegisterAddOnCategory(category)
+        panel.settingsCategory = category
     elseif InterfaceOptions_AddCategory then
         -- Legacy fallback
         InterfaceOptions_AddCategory(panel)

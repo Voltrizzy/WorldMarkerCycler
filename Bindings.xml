@@ -1,4 +1,6 @@
-<Bindings>
-    <Binding name="CLICK WorldMarkerCycler_Next:LeftButton" />
-    <Binding name="CLICK WorldMarkerCycler_Clear:LeftButton" />
-</Bindings>
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+    <Bindings>
+        <Binding name="CLICK WorldMarkerCycler_Next:LeftButton" header="WORLDMARKERCYCLER" />
+        <Binding name="CLICK WorldMarkerCycler_Clear:LeftButton" />
+    </Bindings>
+</Ui>
