@@ -31,38 +31,6 @@ local function InitDB()
     end
 end
 
--- Called by the keybinding to advance the cycle and place the next marker.
-function WorldMarkerCycler_PlaceNextMarker()
-    local db = WorldMarkerCyclerDB
-    if not db then return end
-
-    local seq   = db.sequence
-    local total = #seq
-
-    -- Walk from currentIndex, wrapping around, until a non-zero slot is found.
-    for i = 1, total do
-        local slotIndex = ((db.currentIndex - 1 + (i - 1)) % total) + 1
-        local markerID  = seq[slotIndex]
-
-        if markerID and markerID > 0 then
-            -- Advance the index past this slot for the next call.
-            db.currentIndex = (slotIndex % total) + 1
-            RunMacroText("/wm [@cursor] " .. markerID)
-            return
-        end
-    end
-
-    print("|cffff9900WorldMarkerCycler:|r No markers are configured. Use /wmc to set up your sequence.")
-end
-
--- Called by the keybinding to wipe all world markers and reset the cycle.
-function WorldMarkerCycler_ClearAllMarkers()
-    C_WorldMarker.ClearAllMarkers()
-    if WorldMarkerCyclerDB then
-        WorldMarkerCyclerDB.currentIndex = 1
-    end
-end
-
 -- Slash command to open the options panel.
 SLASH_WORLDMARKERCYCLER1 = "/wmc"
 SlashCmdList["WORLDMARKERCYCLER"] = function()
@@ -75,6 +43,10 @@ eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:SetScript("OnEvent", function(self, event, addonName)
     if addonName == ADDON_NAME then
         InitDB()
+        -- Sync the DB data to the secure buttons
+        if WorldMarkerCycler_UpdateSecureButtons then
+            WorldMarkerCycler_UpdateSecureButtons()
+        end
         self:UnregisterEvent("ADDON_LOADED")
     end
 end)
