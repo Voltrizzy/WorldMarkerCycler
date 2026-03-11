@@ -134,34 +134,40 @@ local function BuildPanel(parent)
         dropdowns[step] = dd
     end
 
-    -- "Key Bindings" Shortcut Button
-    -- Provides a convenient way to jump to the keybinding interface to set keys.
-    local kbBtn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-    kbBtn:SetPoint("TOPLEFT", 24, START_Y - (NUM_STEPS * ROW_HEIGHT) - 24)
-    kbBtn:SetSize(160, 24)
-    kbBtn:SetText("Key Bindings")
-    kbBtn:SetScript("OnClick", function()
-        -- Use the modern API to get the category object for Key Bindings, then open it.
-        -- This is the correct way to open a built-in panel.
-        if Settings and Settings.GetCategory and Settings.OpenToCategory then
-            local category = Settings.GetCategory("KEYBINDINGS")
-            if category then
-                Settings.OpenToCategory(category)
+    -- Modern: Create a Keybindings button that deep-links to the addon's section
+    local keybindingButton = Settings.CreateKeybindingButton(parent, "WORLDMARKERCYCLER_CYCLE", "WORLDMARKERCYCLER_CLEAR")
+    if keybindingButton then
+        keybindingButton:SetPoint("BOTTOMLEFT", 16, 16)
+    else -- Fallback for older clients
+        -- "Keybindings" Shortcut Button
+        -- Provides a convenient way to jump to the keybinding interface to set keys.
+        local kbBtn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+        kbBtn:SetPoint("BOTTOMLEFT", 16, 16)
+        kbBtn:SetSize(160, 24)
+        kbBtn:SetText("Keybindings")
+        kbBtn:SetScript("OnClick", function()
+            -- Use the modern API to get the category object for Keybindings, then open it.
+            -- This is the correct way to open a built-in panel.
+            if Settings and Settings.GetCategory and Settings.OpenToCategory then
+                local category = Settings.GetCategory("KEYBINDINGS")
+                if category then
+                    Settings.OpenToCategory(category)
+                else
+                    -- Fallback if the category can't be found by name
+                    if KeyBindingFrame_LoadUI then KeyBindingFrame_LoadUI() end
+                    if KeyBindingFrame then ShowUIPanel(KeyBindingFrame) end
+                end
             else
-                -- Fallback if the category can't be found by name
+                -- Fallback for older clients
                 if KeyBindingFrame_LoadUI then KeyBindingFrame_LoadUI() end
                 if KeyBindingFrame then ShowUIPanel(KeyBindingFrame) end
             end
-        else
-            -- Fallback for older clients
-            if KeyBindingFrame_LoadUI then KeyBindingFrame_LoadUI() end
-            if KeyBindingFrame then ShowUIPanel(KeyBindingFrame) end
-        end
-    end)
+        end)
 
-    local kbLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    kbLabel:SetPoint("LEFT", kbBtn, "RIGHT", 10, 0)
-    kbLabel:SetText("Assign keys for 'Next Marker' and 'Clear'.")
+        local kbLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+        kbLabel:SetPoint("LEFT", kbBtn, "RIGHT", 10, 0)
+        kbLabel:SetText("Assign keys for 'Next Marker' and 'Clear'.")
+    end
 end
 
 -- ─────────────────────────────────────────────────────────────────────────────

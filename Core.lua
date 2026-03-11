@@ -1,10 +1,5 @@
 local ADDON_NAME = "WorldMarkerCycler"
 
--- Binding Descriptions for the Keybinding UI
-_G["BINDING_HEADER_WORLDMARKERCYCLER"] = "World Marker Cycler"
-_G["BINDING_NAME_CLICK WorldMarkerCycler_Next:LeftButton"] = "Place Next World Marker"
-_G["BINDING_NAME_CLICK WorldMarkerCycler_Clear:LeftButton"] = "Clear All World Markers"
-
 -- Shared marker info table used by Core and Options
 WorldMarkerCycler_MarkerInfo = {
     [0] = { name = "None",     texture = nil },

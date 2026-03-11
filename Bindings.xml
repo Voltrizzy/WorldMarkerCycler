@@ -1,4 +1,8 @@
 <Bindings>
-    <Binding name="CLICK WorldMarkerCycler_Next:LeftButton" header="WORLDMARKERCYCLER" />
-    <Binding name="CLICK WorldMarkerCycler_Clear:LeftButton" />
+    <Binding name="WORLDMARKERCYCLER_CYCLE" header="WORLDMARKERCYCLER">
+        WorldMarkerCycler_Next:Click()
+    </Binding>
+    <Binding name="WORLDMARKERCYCLER_CLEAR">
+        WorldMarkerCycler_Clear:Click()
+    </Binding>
 </Bindings>

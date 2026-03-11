@@ -9,3 +9,4 @@
 
 Core.lua
 Options.lua
+Bindings.xml
