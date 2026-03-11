@@ -135,9 +135,11 @@ local function BuildPanel(parent)
     end
 
     -- Modern: Create a Keybindings button that deep-links to the addon's section
-    local keybindingButton = Settings.CreateKeybindingButton(parent, "WORLDMARKERCYCLER_CYCLE", "WORLDMARKERCYCLER_CLEAR")
-    if keybindingButton then
-        keybindingButton:SetPoint("BOTTOMLEFT", 16, 16)
+    if Settings.CreateKeybindingButton then
+        local keybindingButton = Settings.CreateKeybindingButton(parent, "WORLDMARKERCYCLER_CYCLE", "WORLDMARKERCYCLER_CLEAR")
+        if keybindingButton then
+            keybindingButton:SetPoint("BOTTOMLEFT", 16, 16)
+        end
     else -- Fallback for older clients
         -- "Keybindings" Shortcut Button
         -- Provides a convenient way to jump to the keybinding interface to set keys.
