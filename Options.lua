@@ -141,9 +141,14 @@ local function BuildPanel(parent)
     kbBtn:SetSize(160, 24)
     kbBtn:SetText("Key Bindings")
     kbBtn:SetScript("OnClick", function()
-        if SettingsPanel and SettingsPanel:IsShown() then SettingsPanel:Close() end
-        if KeyBindingFrame_LoadUI then KeyBindingFrame_LoadUI() end
-        if KeyBindingFrame then ShowUIPanel(KeyBindingFrame) end
+        -- Use the modern, safe API to navigate to the KeyBindings panel.
+        if Settings and Settings.OpenToCategory then
+            Settings.OpenToCategory("KEYBINDINGS")
+        else
+            -- Fallback for older clients. This combination can sometimes be insecure.
+            if KeyBindingFrame_LoadUI then KeyBindingFrame_LoadUI() end
+            if KeyBindingFrame then ShowUIPanel(KeyBindingFrame) end
+        end
     end)
 
     local kbLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
