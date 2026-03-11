@@ -1,3 +1,5 @@
+BINDING_HEADER_WORLDMARKERCYCLER = "World Marker Cycler"
+
 local ADDON_NAME = "WorldMarkerCycler"
 
 -- Shared marker info table used by Core and Options
