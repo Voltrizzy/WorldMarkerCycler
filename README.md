@@ -22,13 +22,19 @@ Built for **World of Warcraft: Midnight** (`## Interface: 120000`).
 
 ## Usage
 
-| Action | How |
-|---|---|
-| Open options | `/wmc` |
-| Place next marker | Assign a keybind under ESC > Key Bindings > WorldMarkerCycler |
-| Clear all markers | Assign a keybind under ESC > Key Bindings > WorldMarkerCycler |
+1.  Type `/wmc` in chat or go to `ESC > Options > AddOns > WorldMarkerCycler` to open the configuration panel.
+2.  Set up your desired marker sequence using the dropdown menus.
+3.  Assign keybindings for cycling and clearing markers (see below).
 
-## Notes
+## Keybindings
 
-- Placing markers requires raid leader or raid assistant rank.
-- The addon uses `RunMacroText("/wm [@cursor] N")` to place markers at your cursor position, identical to using the built-in macro.
+To use the addon, you must assign keybindings in the game's main menu:
+
+1.  Press `ESC` to open the Game Menu.
+2.  Click on **Key Bindings**.
+3.  Find the **WorldMarkerCycler** section.
+4.  Assign keys to the following actions:
+    *   **WMC - Cycle**: Places the next marker in your sequence at your cursor.
+    *   **WMC - Clear**: Removes all placed world markers.
+
+Once bound, you can use these keys to manage world markers. Placing markers requires you to have Raid Leader or Assistant privileges.

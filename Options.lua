@@ -131,45 +131,6 @@ local function BuildPanel(parent)
         dd:SetWidth(DD_WIDTH)
         dd:SetupMenu(CreateMenuGenerator(step))
 
-        dropdowns[step] = dd
-    end
-
-    -- Modern: Create a Keybindings button that deep-links to the addon's section
-    if Settings.CreateKeybindingButton then
-        local keybindingButton = Settings.CreateKeybindingButton(parent, "WORLDMARKERCYCLER_CYCLE", "WORLDMARKERCYCLER_CLEAR")
-        if keybindingButton then
-            keybindingButton:SetPoint("BOTTOMLEFT", 16, 16)
-        end
-    else -- Fallback for older clients
-        -- "Keybindings" Shortcut Button
-        -- Provides a convenient way to jump to the keybinding interface to set keys.
-        local kbBtn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-        kbBtn:SetPoint("BOTTOMLEFT", 16, 16)
-        kbBtn:SetSize(160, 24)
-        kbBtn:SetText("Keybindings")
-        kbBtn:SetScript("OnClick", function()
-            -- Use the modern API to get the category object for Keybindings, then open it.
-            -- This is the correct way to open a built-in panel.
-            if Settings and Settings.GetCategory and Settings.OpenToCategory then
-                local category = Settings.GetCategory("KEYBINDINGS")
-                if category then
-                    Settings.OpenToCategory(category)
-                else
-                    -- Fallback if the category can't be found by name
-                    if KeyBindingFrame_LoadUI then KeyBindingFrame_LoadUI() end
-                    if KeyBindingFrame then ShowUIPanel(KeyBindingFrame) end
-                end
-            else
-                -- Fallback for older clients
-                if KeyBindingFrame_LoadUI then KeyBindingFrame_LoadUI() end
-                if KeyBindingFrame then ShowUIPanel(KeyBindingFrame) end
-            end
-        end)
-
-        local kbLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-        kbLabel:SetPoint("LEFT", kbBtn, "RIGHT", 10, 0)
-        kbLabel:SetText("Assign keys for 'Next Marker' and 'Clear'.")
-    end
 end
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -233,15 +194,30 @@ end
 -- Binding Support (Secure Buttons)
 -- ─────────────────────────────────────────────────────────────────────────────
 
+-- This frame holds the state for our secure buttons. Attributes are read from
+-- this 'header' frame during the secure execution path.
+local stateFrame = CreateFrame("Frame", "WorldMarkerCycler_State", UIParent)
+
+-- Method called by the secure environment to save the index state.
+-- It's attached to the stateFrame so the secure snippet can call it.
+function stateFrame:UpdateDBIndex(newIdx)
+    if WorldMarkerCyclerDB then
+        WorldMarkerCyclerDB.currentIndex = newIdx
+    end
+end
+
 -- 1. Create the Secure Button for "Next Marker"
 local btnNext = CreateFrame("Button", "WorldMarkerCycler_Next", UIParent, "SecureActionButtonTemplate")
 btnNext:SetAttribute("type", "macro")
+btnNext:SetAttribute("header", stateFrame) -- Critical: point to the state frame
 btnNext:RegisterForClicks("AnyDown", "AnyUp")
 
 -- This secure snippet runs before the click is processed. It calculates the next
 -- marker in the sequence and updates the 'macrotext' attribute dynamically.
+-- 'self' inside the snippet refers to the header (stateFrame).
+-- 'button' refers to the button being clicked (btnNext).
 local secureSnippet = [[
-    -- Load the sequence string (e.g., "1,2,6,8") and current index
+    -- Load the sequence string (e.g., "1,2,6,8") and current index from the header
     local seqStr = self:GetAttribute("sequence") or ""
     local idx = tonumber(self:GetAttribute("currentIndex")) or 1
 
@@ -256,7 +232,6 @@ local secureSnippet = [[
     if count == 0 then return end
 
     -- Cycle logic: Find the next valid marker starting from current index
-    -- We loop through the list to find a non-zero marker
     local markerID = 0
     local nextIdx = idx
 
@@ -270,9 +245,10 @@ local secureSnippet = [[
         end
     end
 
-    -- Set the macro text for THIS click
+    -- Set the macro text on the button for THIS click
     if markerID > 0 then
-        self:SetAttribute("macrotext", "/wm [@cursor] " .. markerID)
+        button:SetAttribute("macrotext", "/wm [@cursor] " .. markerID)
+        -- Update the index on the header for the NEXT click
         self:SetAttribute("currentIndex", nextIdx)
         
         -- Sync the index back to the insecure Lua environment (non-critical)
@@ -280,15 +256,9 @@ local secureSnippet = [[
     end
 ]]
 
--- Attach the snippet to the button's OnClick handler
-SecureHandlerWrapScript(btnNext, "OnClick", btnNext, secureSnippet)
-
--- Method called by the secure environment to save the index state
-function btnNext:UpdateDBIndex(newIdx)
-    if WorldMarkerCyclerDB then
-        WorldMarkerCyclerDB.currentIndex = newIdx
-    end
-end
+-- Attach the snippet to the button's OnClick handler.
+-- The header (stateFrame) is passed as the 'self' argument to the snippet.
+SecureHandlerWrapScript(btnNext, "OnClick", stateFrame, secureSnippet)
 
 -- Connect the forward declaration to the actual function
 WorldMarkerCycler_UpdateSecureButtons_Ref = WorldMarkerCycler_UpdateSecureButtons
@@ -303,7 +273,7 @@ btnClear:RegisterForClicks("AnyDown", "AnyUp")
 -- Synchronization (Lua -> Secure)
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- Pushes the current DB settings into the secure button's attributes.
+-- Pushes the current DB settings into the secure state frame's attributes.
 -- This must be called whenever the sequence or index changes in Lua.
 function WorldMarkerCycler_UpdateSecureButtons()
     if not WorldMarkerCyclerDB or InCombatLockdown() then return end
@@ -312,8 +282,9 @@ function WorldMarkerCycler_UpdateSecureButtons()
     local seq = WorldMarkerCyclerDB.sequence or {}
     local seqStr = table.concat(seq, ",")
     
-    btnNext:SetAttribute("sequence", seqStr)
-    btnNext:SetAttribute("currentIndex", WorldMarkerCyclerDB.currentIndex or 1)
+    -- Set attributes on the state frame, not the button
+    stateFrame:SetAttribute("sequence", seqStr)
+    stateFrame:SetAttribute("currentIndex", WorldMarkerCyclerDB.currentIndex or 1)
 end
 
 -- Make sure the panel exists after the addon loads (so ESC > Options lists it).
