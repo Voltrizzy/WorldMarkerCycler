@@ -141,11 +141,19 @@ local function BuildPanel(parent)
     kbBtn:SetSize(160, 24)
     kbBtn:SetText("Key Bindings")
     kbBtn:SetScript("OnClick", function()
-        -- Use the modern, safe API to navigate to the KeyBindings panel.
-        if Settings and Settings.OpenToCategory then
-            Settings.OpenToCategory("KEYBINDINGS")
+        -- Use the modern API to get the category object for Key Bindings, then open it.
+        -- This is the correct way to open a built-in panel.
+        if Settings and Settings.GetCategory and Settings.OpenToCategory then
+            local category = Settings.GetCategory("KEYBINDINGS")
+            if category then
+                Settings.OpenToCategory(category)
+            else
+                -- Fallback if the category can't be found by name
+                if KeyBindingFrame_LoadUI then KeyBindingFrame_LoadUI() end
+                if KeyBindingFrame then ShowUIPanel(KeyBindingFrame) end
+            end
         else
-            -- Fallback for older clients. This combination can sometimes be insecure.
+            -- Fallback for older clients
             if KeyBindingFrame_LoadUI then KeyBindingFrame_LoadUI() end
             if KeyBindingFrame then ShowUIPanel(KeyBindingFrame) end
         end
