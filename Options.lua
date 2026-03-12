@@ -85,7 +85,12 @@ local function CreateMenuGenerator(step)
                         RefreshAllDropdowns()
                     end
                 )
-                radio:SetIcon(minfo.texture)
+                radio:AddInitializer(function(button)
+                    local icon = button:AttachTexture()
+                    icon:SetSize(16, 16)
+                    icon:SetPoint("RIGHT")
+                    icon:SetTexture(minfo.texture)
+                end)
             end
         end
     end
