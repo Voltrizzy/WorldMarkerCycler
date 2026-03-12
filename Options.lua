@@ -206,7 +206,7 @@ end
 
 -- This frame holds the state for our secure buttons. Attributes are read from
 -- this 'header' frame during the secure execution path.
-local stateFrame = CreateFrame("Frame", "WorldMarkerCycler_State", UIParent, "SecureHandlerAttributeTemplate")
+local stateFrame = CreateFrame("Frame", "WorldMarkerCycler_State", UIParent, "SecureHandlerStateTemplate")
 
 -- Method called by the secure environment to save the index state.
 -- It's attached to the stateFrame so the secure snippet can call it.
