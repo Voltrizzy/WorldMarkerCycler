@@ -40,8 +40,14 @@ local function RefreshAllDropdowns()
         if dd then
             local markerID = WorldMarkerCyclerDB and WorldMarkerCyclerDB.sequence[step] or 0
             local info     = WorldMarkerCycler_MarkerInfo[markerID]
-            -- Update the button text to match selection
-            dd:SetText(info and info.name or "None")
+            -- Update the button text (with icon) to match selection
+            local displayText
+            if info and info.texture then
+                displayText = string.format("|T%s:16:16|t %s", info.texture, info.name)
+            else
+                displayText = (info and info.name) or "None"
+            end
+            dd:SetText(displayText)
             -- Regenerate the menu if open to update available options (filter used markers)
             dd:GenerateMenu()
         end
@@ -213,7 +219,6 @@ end
 -- 1. Create the Secure Button for "Next Marker"
 local btnNext = CreateFrame("Button", "WorldMarkerCycler_Next", UIParent, "SecureActionButtonTemplate")
 btnNext:SetAttribute("type", "macro")
-btnNext:SetAttribute("header", stateFrame) -- Critical: point to the state frame
 btnNext:RegisterForClicks("AnyDown", "AnyUp")
 
 -- This secure snippet runs before the click is processed. It calculates the next
