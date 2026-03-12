@@ -195,7 +195,7 @@ end
 
 -- This frame holds the state for our secure buttons. Attributes are read from
 -- this 'header' frame during the secure execution path.
-local stateFrame = CreateFrame("Frame", "WorldMarkerCycler_State", UIParent)
+local stateFrame = CreateFrame("Frame", "WorldMarkerCycler_State", UIParent, "SecureHandlerAttributeTemplate")
 
 -- Method called by the secure environment to save the index state.
 -- It's attached to the stateFrame so the secure snippet can call it.
@@ -264,6 +264,12 @@ local btnClear = CreateFrame("Button", "WorldMarkerCycler_Clear", UIParent, "Sec
 btnClear:SetAttribute("type", "macro")
 btnClear:SetAttribute("macrotext", "/cwm all") -- Secure command to clear world markers
 btnClear:RegisterForClicks("AnyDown", "AnyUp")
+
+-- Reset the cycle index back to step 1 when clearing markers
+SecureHandlerWrapScript(btnClear, "OnClick", stateFrame, [[
+    self:SetAttribute("currentIndex", 1)
+    self:CallMethod("UpdateDBIndex", 1)
+]])
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Synchronization (Lua -> Secure)
