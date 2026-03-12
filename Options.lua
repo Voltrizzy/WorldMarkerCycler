@@ -85,10 +85,7 @@ local function CreateMenuGenerator(step)
                         RefreshAllDropdowns()
                     end
                 )
-                
-                if minfo.texture and radio.SetIcon then
-                    radio:SetIcon(minfo.texture)
-                end
+                radio:SetIcon(minfo.texture)
             end
         end
     end
@@ -131,6 +128,8 @@ local function BuildPanel(parent)
         dd:SetWidth(DD_WIDTH)
         dd:SetupMenu(CreateMenuGenerator(step))
 
+        dropdowns[step] = dd
+    end
 end
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -260,9 +259,6 @@ local secureSnippet = [[
 -- The header (stateFrame) is passed as the 'self' argument to the snippet.
 SecureHandlerWrapScript(btnNext, "OnClick", stateFrame, secureSnippet)
 
--- Connect the forward declaration to the actual function
-WorldMarkerCycler_UpdateSecureButtons_Ref = WorldMarkerCycler_UpdateSecureButtons
-
 -- 2. Create the Secure Button for "Clear All"
 local btnClear = CreateFrame("Button", "WorldMarkerCycler_Clear", UIParent, "SecureActionButtonTemplate")
 btnClear:SetAttribute("type", "macro")
@@ -286,6 +282,9 @@ function WorldMarkerCycler_UpdateSecureButtons()
     stateFrame:SetAttribute("sequence", seqStr)
     stateFrame:SetAttribute("currentIndex", WorldMarkerCyclerDB.currentIndex or 1)
 end
+
+-- Connect the forward declaration to the actual function (must be after the function is defined above)
+WorldMarkerCycler_UpdateSecureButtons_Ref = WorldMarkerCycler_UpdateSecureButtons
 
 -- Make sure the panel exists after the addon loads (so ESC > Options lists it).
 local initFrame = CreateFrame("Frame")

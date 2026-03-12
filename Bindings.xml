@@ -2,7 +2,7 @@
     <Binding name="WORLDMARKERCYCLER_CYCLE" description="WMC - Cycle" header="WORLDMARKERCYCLER" category="WorldMarkerCycler">
         WorldMarkerCycler_Next:Click()
     </Binding>
-    <Binding name="WORLDMARKERCYCLER_CLEAR" description="WMC - Clear" category="WorldMarkerCycler">
+    <Binding name="WORLDMARKERCYCLER_CLEAR" description="WMC - Clear" header="WORLDMARKERCYCLER" category="WorldMarkerCycler">
         WorldMarkerCycler_Clear:Click()
     </Binding>
 </Bindings>
